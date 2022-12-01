@@ -11,7 +11,6 @@ const verifyJWT = (req, res, next) => {
   }
 
   const accessToken = authHeader.split(" ")[1];
-  console.log(accessToken);
   jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET, (err, decode) => {
     if (err) return res.status(403).json({ message: err }); // Unauthorized
     req.user = decode.UserInfo.username;

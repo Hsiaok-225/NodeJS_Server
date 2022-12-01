@@ -4,8 +4,6 @@ const verifyRoles = (...allowRoles) => {
     // check one of roles in allowlist
     const roles = req.roles; // array
     const allowlist = [...allowRoles];
-    console.log("user", roles);
-    console.log("allowlist", allowlist);
     // includes return true|false
     const isValid = roles
       .map((role) => allowlist.includes(role))

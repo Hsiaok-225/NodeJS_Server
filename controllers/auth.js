@@ -1,14 +1,6 @@
-const path = require("path");
+const User = require("../model/User");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const fsPromises = require("fs").promises;
-
-const usersDB = {
-  users: require("../model/users.json"),
-  setUsers: function (data) {
-    this.users = data;
-  },
-};
 
 const authController = async (req, res) => {
   const { username, password } = req.body;
@@ -17,22 +9,20 @@ const authController = async (req, res) => {
       .status(400)
       .json({ message: "username or password is required" });
 
-  //check user is exist
-  const foundUser = usersDB.users.find((user) => user.username === username);
+  //Check user exist
+  const foundUser = await User.findOne({ username }).exec();
+  console.log(foundUser);
   if (!foundUser)
     return res.status(401).json({ message: `Unauthorized, user is not exist` });
 
-  // verify password(pwd, hashpwd)
+  // Verify password
+  // set jwt to user & refreshToken to db
   try {
     const isValid = await bcrypt.compare(password, foundUser.password);
     if (!isValid) return res.status(401).json({ message: `wrong password` });
 
-    // if isValid
-    // 1.create accessToken & refreshToken
-    // 2.put JWT to userInfo
-    // 3.set refreshToken httpOnly
-
-    const roles = Object.values(foundUser.roles); // returns an array [1000,2000]
+    // jwt & refresh
+    const roles = Object.values(foundUser.roles);
     const accessToken = jwt.sign(
       {
         UserInfo: {
@@ -41,7 +31,7 @@ const authController = async (req, res) => {
         },
       },
       process.env.ACCESS_TOKEN_SECRET,
-      { expiresIn: "40s" }
+      { expiresIn: "120s" }
     );
     const refreshToken = jwt.sign(
       {
@@ -51,29 +41,17 @@ const authController = async (req, res) => {
       { expiresIn: "1d" }
     );
 
-    // Saving refreshToken with current user in DB
-    const currentUser = { ...foundUser, refreshToken };
-    const updateUsers = usersDB.users.map((user) => {
-      if (user.username === foundUser.username) {
-        return currentUser;
-      }
-      return user;
-    });
+    // Update user with refreshToken in DB
+    foundUser.refreshToken = refreshToken;
+    const result = await foundUser.save();
+    console.log("auth", result);
 
-    usersDB.setUsers(updateUsers);
-    await fsPromises.writeFile(
-      path.join(__dirname, "..", "model", "users.json"),
-      JSON.stringify(usersDB.users)
-    );
-
-    // Set httpOnly cookies with refreshToken
+    // Set refresh & jwt to user
     res.cookie("jwt", refreshToken, {
       httpOnly: true,
       sameSite: "None",
-      secure: true,
       maxAge: 24 * 60 * 60 * 1000,
     });
-    // Send accessToken when user loggin
     res.json({
       accessToken,
     });

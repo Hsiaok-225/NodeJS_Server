@@ -5,7 +5,6 @@ const path = require("path");
 const cors = require("cors");
 const credentials = require("./middleware/credentials");
 const corsOptions = require("./config/corsOptions");
-const { logger } = require("./middleware/logEvents");
 const errorLogger = require("./middleware/errorLogger");
 const verifyJWT = require("./middleware/verifyJWT");
 const cookieParser = require("cookie-parser");
@@ -13,8 +12,6 @@ const mongoose = require("mongoose");
 const PORT = process.env.PORT || 3500;
 
 mongoose.connect(process.env.DATABASE_URI).catch((err) => console.log(err));
-
-app.use(logger);
 
 // check credentials before CORS
 // setting credentials both frontend & backend

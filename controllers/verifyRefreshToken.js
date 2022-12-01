@@ -1,13 +1,7 @@
-const usersDB = {
-  users: require("../model/users.json"),
-  setUsers: function (data) {
-    this.users = data;
-  },
-};
-
+const User = require("../model/User");
 const jwt = require("jsonwebtoken");
 
-// Client: had loggined(got rfToken) & ask for new accessToken
+// Client: loggined(got rfToken) & ask for new accessToken
 // send req with cookie-rfToken to Server
 
 // Server
@@ -22,9 +16,7 @@ const VerifyRefreshToken = async (req, res) => {
   const refreshToken = cookies.jwt;
 
   // compare User & refreshToken
-  const foundUser = usersDB.users.find(
-    (user) => user.refreshToken === refreshToken
-  );
+  const foundUser = await User.findOne({ refreshToken });
   if (!foundUser)
     return res
       .status(401)
@@ -52,5 +44,3 @@ const VerifyRefreshToken = async (req, res) => {
 };
 
 module.exports = VerifyRefreshToken;
-
-// DB: [{ user:username, refreshToken }]
